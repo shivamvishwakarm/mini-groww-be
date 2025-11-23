@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # MongoDB Service
+  mongodb:
+    image: mongo:7.0
+    container_name: stock-trading-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: stock-trading
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - stock-trading-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/stock-trading --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Service
+  redis:
+    image: redis:7-alpine
+    container_name: stock-trading-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - stock-trading-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Service
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: stock-trading-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      MONGO_URI: mongodb://mongodb:27017/stock-trading
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this}
+      JWT_EXPIRES_IN: 7d
+      INITIAL_BALANCE: 100000
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - stock-trading-network
+    volumes:
+      - ./logs:/app/logs
+
+networks:
+  stock-trading-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  redis_data:

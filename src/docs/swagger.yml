@@ -1,0 +1,582 @@
+openapi: 3.0.0
+info:
+  title: Stock Trading Simulator API
+  description: Production-ready REST API for a stock trading simulator with JWT authentication, Redis caching, and MongoDB persistence
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@stocktrading.com
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Development server
+  - url: https://api.stocktrading.com/api/v1
+    description: Production server
+
+tags:
+  - name: Auth
+    description: Authentication endpoints
+  - name: Stocks
+    description: Stock data endpoints (with Redis caching)
+  - name: Orders
+    description: Trading order endpoints
+  - name: Portfolio
+    description: User portfolio endpoints
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from login endpoint
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        balance:
+          type: number
+          format: double
+          example: 100000.00
+        createdAt:
+          type: string
+          format: date-time
+
+    Stock:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        symbol:
+          type: string
+          example: "AAPL"
+        name:
+          type: string
+          example: "Apple Inc."
+        sector:
+          type: string
+          example: "Technology"
+        currentPrice:
+          type: number
+          format: double
+          example: 178.25
+        previousClose:
+          type: number
+          format: double
+          example: 176.80
+        marketCap:
+          type: number
+          format: double
+          example: 2800000000000
+
+    Order:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        userId:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        symbol:
+          type: string
+          example: "AAPL"
+        side:
+          type: string
+          enum: [BUY, SELL]
+          example: "BUY"
+        quantity:
+          type: integer
+          example: 10
+        price:
+          type: number
+          format: double
+          example: 178.25
+        createdAt:
+          type: string
+          format: date-time
+
+    Holding:
+      type: object
+      properties:
+        symbol:
+          type: string
+          example: "AAPL"
+        quantity:
+          type: integer
+          example: 10
+        avgBuyPrice:
+          type: number
+          format: double
+          example: 175.50
+        currentPrice:
+          type: number
+          format: double
+          example: 178.25
+        currentValue:
+          type: number
+          format: double
+          example: 1782.50
+        investedValue:
+          type: number
+          format: double
+          example: 1755.00
+        profitLoss:
+          type: number
+          format: double
+          example: 27.50
+        profitLossPercent:
+          type: number
+          format: double
+          example: 1.57
+
+    Portfolio:
+      type: object
+      properties:
+        holdings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Holding'
+        totalInvestedValue:
+          type: number
+          format: double
+          example: 50000.00
+        totalCurrentValue:
+          type: number
+          format: double
+          example: 52500.00
+        totalProfitLoss:
+          type: number
+          format: double
+          example: 2500.00
+        totalProfitLossPercent:
+          type: number
+          format: double
+          example: 5.00
+        availableBalance:
+          type: number
+          format: double
+          example: 50000.00
+        totalPortfolioValue:
+          type: number
+          format: double
+          example: 102500.00
+
+    PricePoint:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2024-01-15"
+        price:
+          type: number
+          format: double
+          example: 175.50
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Operation successful"
+        data:
+          type: object
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Error message"
+        details:
+          type: object
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user
+      description: Create a new user account with initial balance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  example: "John Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+                password:
+                  type: string
+                  minLength: 6
+                  example: "password123"
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "User registered successfully"
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      token:
+                        type: string
+                        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '400':
+          description: Validation error or user already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login user
+      description: Authenticate user and receive JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+                password:
+                  type: string
+                  example: "password123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Login successful"
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      token:
+                        type: string
+                        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Get current user
+      description: Get authenticated user's information
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User information retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /stocks:
+    get:
+      tags:
+        - Stocks
+      summary: Get all stocks
+      description: Retrieve list of all available stocks (cached for 60 seconds)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of stocks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Stock'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /stocks/{symbol}:
+    get:
+      tags:
+        - Stocks
+      summary: Get stock by symbol
+      description: Retrieve detailed information for a specific stock (cached for 60 seconds)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          description: Stock symbol (e.g., AAPL, GOOGL)
+          schema:
+            type: string
+            example: "AAPL"
+      responses:
+        '200':
+          description: Stock details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Stock'
+        '404':
+          description: Stock not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /stocks/{symbol}/history:
+    get:
+      tags:
+        - Stocks
+      summary: Get stock price history
+      description: Retrieve 30-day price history for a stock (cached for 300 seconds)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          description: Stock symbol (e.g., AAPL, GOOGL)
+          schema:
+            type: string
+            example: "AAPL"
+      responses:
+        '200':
+          description: Price history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PricePoint'
+        '404':
+          description: Stock not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /orders:
+    post:
+      tags:
+        - Orders
+      summary: Create a new order
+      description: Place a BUY or SELL order for a stock
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - symbol
+                - side
+                - quantity
+              properties:
+                symbol:
+                  type: string
+                  example: "AAPL"
+                side:
+                  type: string
+                  enum: [BUY, SELL]
+                  example: "BUY"
+                quantity:
+                  type: integer
+                  minimum: 1
+                  example: 10
+      responses:
+        '201':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Order created successfully"
+                  data:
+                    $ref: '#/components/schemas/Order'
+        '400':
+          description: Validation error or insufficient balance/holdings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      tags:
+        - Orders
+      summary: Get user's orders
+      description: Retrieve all orders placed by the authenticated user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /portfolio:
+    get:
+      tags:
+        - Portfolio
+      summary: Get user's portfolio
+      description: Retrieve user's holdings with current values and profit/loss calculations
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Portfolio summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Portfolio'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
