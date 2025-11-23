@@ -7,6 +7,7 @@ import YAML from 'yamljs';
 import path from 'path';
 import { requestLogger } from './utils/logger';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
+import { config } from './config/env';
 
 // Import routes
 import authRoutes from './routes/auth.routes';
@@ -23,7 +24,7 @@ app.use(helmet());
 // CORS
 app.use(
     cors({
-        origin: process.env.CORS_ORIGIN || '*',
+        origin: config.corsOrigin,
         credentials: true,
     })
 );
