@@ -21,14 +21,19 @@ export const authenticate = (
 ): void => {
     try {
         // Get token from Authorization header
+        // Get token from Authorization header or cookie
+        let token = req.cookies.token;
+
         const authHeader = req.headers.authorization;
 
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.substring(7);
+        }
+
+        if (!token) {
             sendError(res, 'No token provided', 401);
             return;
         }
-
-        const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
         // Verify token
         const payload = verifyToken(token);
