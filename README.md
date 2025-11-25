@@ -5,9 +5,10 @@ A production-ready backend API for a stock trading simulator built with Node.js,
 ## 🚀 Features
 
 - **RESTful API** with comprehensive endpoints for trading operations
-- **JWT Authentication** for secure user sessions
+- **Real-time Updates** via WebSockets for live stock prices
+- **JWT Authentication** via HTTP-only cookies for enhanced security
 - **Redis Caching** for optimized stock data retrieval
-- **MongoDB** for persistent data storage
+- **MongoDB Transactions** for atomic order processing
 - **TypeScript** for type safety and better developer experience
 - **Swagger/OpenAPI** documentation with interactive UI
 - **Docker** support for easy deployment
@@ -16,7 +17,7 @@ A production-ready backend API for a stock trading simulator built with Node.js,
 ## 📋 Prerequisites
 
 - Node.js 18+ (LTS recommended)
-- MongoDB 7.0+
+- MongoDB 7.0+ (Replica Set required for transactions)
 - Redis 7+
 - Docker & Docker Compose (optional, for containerized deployment)
 
@@ -163,6 +164,23 @@ All API endpoints are prefixed with `/api/v1`
 
 #### Portfolio
 - `GET /portfolio` - Get user's portfolio with P&L
+
+### 📡 Real-time Market Data (WebSocket)
+
+Connect to the WebSocket server at `ws://localhost:3000` to receive live updates.
+
+**Events:**
+- `priceUpdate`: Broadcasts an array of stock updates every 2 seconds.
+
+```json
+[
+  {
+    "symbol": "AAPL",
+    "price": 150.25,
+    "changePercent": 0.15
+  }
+]
+```
 
 ### Authentication
 

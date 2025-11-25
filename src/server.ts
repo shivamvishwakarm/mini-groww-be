@@ -3,6 +3,8 @@ import { config } from './config/env';
 import { connectDB } from './config/db';
 import { redis } from './config/redis';
 import { logger } from './utils/logger';
+import { socketService } from './services/socket.service';
+import { marketService } from './services/market.service';
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
@@ -33,9 +35,16 @@ const startServer = async () => {
             logger.info(`🌍 Environment: ${config.nodeEnv}`);
         });
 
+        // Initialize Socket.io
+        socketService.init(server);
+
+        // Start Market Simulation
+        marketService.startSimulation();
+
         // Graceful shutdown
         const gracefulShutdown = async () => {
             logger.info('Shutting down gracefully...');
+            marketService.stopSimulation();
             server.close(async () => {
                 await redis.quit();
                 process.exit(0);

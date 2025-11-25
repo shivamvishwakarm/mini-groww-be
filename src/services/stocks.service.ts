@@ -66,33 +66,33 @@ export const getStockBySymbol = async (
 };
 
 /**
- * Generate mock price history for a stock
+ * Generate mock intraday price history for a stock (one day, hourly intervals)
  */
 const generatePriceHistory = (
     currentPrice: number,
-    days: number = 30
+    hours: number = 24
 ): PricePoint[] => {
     const history: PricePoint[] = [];
-    const today = new Date();
+    const now = new Date();
 
-    // Start from a price slightly different from current
-    let price = currentPrice * (0.85 + Math.random() * 0.15);
+    // Start from a price slightly different from current (previous day's close)
+    let price = currentPrice * (0.95 + Math.random() * 0.05);
 
-    for (let i = days - 1; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
+    for (let i = hours - 1; i >= 0; i--) {
+        const timestamp = new Date(now);
+        timestamp.setHours(timestamp.getHours() - i);
 
         history.push({
-            date: date.toISOString().split('T')[0],
+            date: timestamp.toISOString(),
             price: parseFloat(price.toFixed(2)),
         });
 
-        // Random walk with slight upward bias to reach current price
-        const change = (Math.random() - 0.45) * (price * 0.03);
-        price = Math.max(price + change, currentPrice * 0.5);
+        // Random walk with slight bias to reach current price
+        const change = (Math.random() - 0.48) * (price * 0.01);
+        price = Math.max(price + change, currentPrice * 0.8);
     }
 
-    // Ensure last price is close to current price
+    // Ensure last price is the current price
     history[history.length - 1].price = currentPrice;
 
     return history;

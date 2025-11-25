@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Stock Trading Simulator API
-  description: Production-ready REST API for a stock trading simulator with JWT authentication, Redis caching, and MongoDB persistence
+  description: Production-ready REST API for a stock trading simulator with JWT authentication (Cookie/Header), Redis caching, MongoDB persistence, and Real-time WebSockets.
   version: 1.0.0
   contact:
     name: API Support
@@ -22,6 +22,8 @@ tags:
     description: Trading order endpoints
   - name: Portfolio
     description: User portfolio endpoints
+  - name: Real-time
+    description: WebSocket endpoints for live data
 
 components:
   securitySchemes:
@@ -29,7 +31,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT token obtained from login endpoint
+      description: JWT token obtained from login endpoint. Can be sent as `Authorization: Bearer <token>` header or `token` cookie.
 
   schemas:
     User:
@@ -580,3 +582,94 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /socket.io/:
+    get:
+      tags:
+        - Real-time
+      summary: Connect to WebSocket
+      description: |
+        **IMPORTANT:** This is a WebSocket connection, not a standard HTTP endpoint.
+        
+        **Connection Details:**
+        - **URL:** `ws://localhost:3000` (Do NOT include `/api/v1`)
+        - **Path:** `/socket.io/` (Default Socket.io path)
+        - **Protocol:** `ws` or `wss`
+        
+        **Client Example (Socket.io Client):**
+        ```javascript
+        import { io } from "socket.io-client";
+        const socket = io("http://localhost:3000", {
+          withCredentials: true
+        });
+        
+        // Subscribe to stocks
+        socket.emit('subscribe', { symbols: ['AAPL', 'GOOGL'] });
+        
+        // Listen for initial history
+        socket.on('priceHistory', (data) => {
+          console.log(`History for ${data.symbol}:`, data.history);
+        });
+        
+        // Listen for live updates
+        socket.on('priceUpdate', (data) => {
+          console.log('Live update:', data);
+        });
+        
+        // Unsubscribe
+        socket.emit('unsubscribe', { symbols: ['GOOGL'] });
+        ```
+        
+        **Client → Server Events:**
+        
+        - **subscribe**: Subscribe to stock price updates
+          ```json
+          { "symbols": ["AAPL", "GOOGL", "MSFT"] }
+          ```
+        
+        - **unsubscribe**: Unsubscribe from stock price updates
+          ```json
+          { "symbols": ["GOOGL"] }
+          ```
+        
+        **Server → Client Events:**
+        
+        - **subscribed**: Confirmation of subscription
+          ```json
+          { "symbols": ["AAPL", "GOOGL"] }
+          ```
+        
+        - **priceHistory**: Initial price history (sent after subscribe)
+          ```json
+          {
+            "symbol": "AAPL",
+            "history": [
+              { "price": 150.25, "timestamp": "2024-01-15T10:00:00.000Z" },
+              { "price": 150.50, "timestamp": "2024-01-15T10:01:00.000Z" }
+            ]
+          }
+          ```
+          *Note: History contains up to 100 recent price points from Redis*
+        
+        - **priceUpdate**: Live price updates (every 2 seconds, only for subscribed symbols)
+          ```json
+          {
+            "symbol": "AAPL",
+            "price": 150.75,
+            "changePercent": 0.33,
+            "timestamp": "2024-01-15T10:00:00.000Z"
+          }
+          ```
+        
+        - **unsubscribed**: Confirmation of unsubscription
+          ```json
+          { "symbols": ["GOOGL"] }
+          ```
+        
+        - **error**: Error message
+          ```json
+          { "message": "Invalid symbols array" }
+          ```
+      responses:
+        '101':
+          description: Switching Protocols (WebSocket Handshake)
