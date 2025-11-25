@@ -20,7 +20,7 @@ export class SocketService {
     public init(httpServer: HttpServer): void {
         this.io = new Server(httpServer, {
             cors: {
-                origin: config.corsOrigin,
+                origin: config.corsOrigin.split(',').map(origin => origin.trim()),
                 methods: ['GET', 'POST'],
                 credentials: true,
             },

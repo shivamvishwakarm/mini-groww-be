@@ -15,7 +15,7 @@ const envSchema = z.object({
     JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
     JWT_EXPIRES_IN: z.string().default('7d'),
     INITIAL_BALANCE: z.string().default('100000'),
-    CORS_ORIGIN: z.string().default('http://localhost:5173'),
+    CORS_ORIGIN: z.string().default('http://localhost:5173,http://localhost:4173,http://groww.shivam09.tech'),
 });
 
 // Validate and parse environment variables

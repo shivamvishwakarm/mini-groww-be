@@ -26,7 +26,7 @@ app.use(helmet());
 // CORS
 app.use(
     cors({
-        origin: config.corsOrigin,
+        origin: config.corsOrigin.split(',').map(origin => origin.trim()),
         credentials: true,
     })
 );
