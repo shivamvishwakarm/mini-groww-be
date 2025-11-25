@@ -31,6 +31,7 @@ export class SocketService {
 
             // Handle subscription to stocks
             socket.on('subscribe', async (data: { symbols: string[] }) => {
+                console.log("data", data);
                 try {
                     const { symbols } = data;
                     if (!symbols || !Array.isArray(symbols)) {

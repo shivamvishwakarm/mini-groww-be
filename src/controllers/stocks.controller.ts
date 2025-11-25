@@ -54,3 +54,18 @@ export const getStockHistory = async (
         sendError(res, (error as Error).message, 404);
     }
 };
+
+/**
+ * Get most bought stocks
+ */
+export const getMostBoughtStocks = async (
+    _req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const mostBought = await stocksService.getMostBoughtStocks(10);
+        sendSuccess(res, mostBought);
+    } catch (error) {
+        sendError(res, (error as Error).message, 500);
+    }
+};

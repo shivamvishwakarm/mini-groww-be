@@ -127,3 +127,66 @@ export const getStockHistory = async (
 
     return history;
 };
+
+export interface MostBoughtStock {
+    symbol: string;
+    name: string;
+    currentPrice: number;
+    orderCount: number;
+    totalQuantity: number;
+}
+
+/**
+ * Get most bought stocks based on order volume
+ */
+export const getMostBoughtStocks = async (
+    limit: number = 10
+): Promise<MostBoughtStock[]> => {
+    // Try to get from cache
+    const cacheKey = 'stocks:most-bought';
+    const cached = await getCache<MostBoughtStock[]>(cacheKey);
+    if (cached) {
+        return cached;
+    }
+
+    // Import Order model dynamically to avoid circular dependency
+    const { Order } = await import('../models/Order.model');
+
+    // Aggregate BUY orders
+    const aggregation = await Order.aggregate([
+        // Filter only BUY orders
+        { $match: { side: 'BUY' } },
+        // Group by symbol
+        {
+            $group: {
+                _id: '$symbol',
+                orderCount: { $sum: 1 },
+                totalQuantity: { $sum: '$quantity' },
+            },
+        },
+        // Sort by order count (descending)
+        { $sort: { orderCount: -1 } },
+        // Limit results
+        { $limit: limit },
+    ]);
+
+    // Enrich with stock details
+    const results: MostBoughtStock[] = [];
+    for (const item of aggregation) {
+        const stock = await Stock.findOne({ symbol: item._id });
+        if (stock) {
+            results.push({
+                symbol: stock.symbol,
+                name: stock.name,
+                currentPrice: stock.currentPrice,
+                orderCount: item.orderCount,
+                totalQuantity: item.totalQuantity,
+            });
+        }
+    }
+
+    // Cache the result
+    await setCache(cacheKey, results, CACHE_TTL.STOCKS_LIST);
+
+    return results;
+};

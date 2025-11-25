@@ -351,6 +351,55 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /stocks/most-bought:
+    get:
+      tags:
+        - Stocks
+      summary: Get most bought stocks
+      description: Retrieve the most frequently purchased stocks based on order volume (cached for 60 seconds)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of most bought stocks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        symbol:
+                          type: string
+                          example: "AAPL"
+                        name:
+                          type: string
+                          example: "Apple Inc."
+                        currentPrice:
+                          type: number
+                          format: double
+                          example: 150.25
+                        orderCount:
+                          type: integer
+                          example: 45
+                          description: Number of buy orders placed
+                        totalQuantity:
+                          type: integer
+                          example: 1250
+                          description: Total quantity purchased across all orders
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /stocks:
     get:
       tags:
