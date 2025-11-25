@@ -15,6 +15,9 @@ const symbolParamSchema = {
 
 // Routes - all require authentication
 router.get('/most-bought', authenticate, stocksController.getMostBoughtStocks);
+router.get('/gainers', authenticate, stocksController.getTopGainers);
+router.get('/losers', authenticate, stocksController.getTopLosers);
+router.get('/volume-shockers', authenticate, stocksController.getVolumeShockers);
 router.get('/', authenticate, stocksController.getAllStocks);
 router.get(
     '/:symbol',

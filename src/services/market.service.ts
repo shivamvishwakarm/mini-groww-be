@@ -1,4 +1,5 @@
 import { Stock } from '../models/Stock.model';
+import { Index } from '../models/Index.model';
 import { redis } from '../config/redis';
 import { socketService } from './socket.service';
 import { logger } from '../utils/logger';
@@ -13,6 +14,9 @@ export class MarketService {
 
     // Stocks to simulate
     private readonly targetStocks = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA'];
+
+    // Indices to simulate
+    private readonly targetIndices = ['NIFTY', 'SENSEX', 'BANKNIFTY', 'MIDCAPNIFTY', 'FINNIFTY'];
 
     private constructor() { }
 
@@ -37,6 +41,7 @@ export class MarketService {
 
         this.intervalId = setInterval(async () => {
             await this.updatePrices();
+            await this.updateIndices();
         }, SIMULATION_INTERVAL);
     }
 
@@ -89,6 +94,44 @@ export class MarketService {
             }
         } catch (error) {
             logger.error('❌ Error in market simulation:', error);
+        }
+    }
+
+    private async updateIndices(): Promise<void> {
+        try {
+            for (const symbol of this.targetIndices) {
+                const index = await Index.findOne({ symbol });
+                if (!index) continue;
+
+                // Fluctuate value by +/- 1% (indices are less volatile)
+                const changePercent = (Math.random() - 0.5) * 0.02;
+                const newValue = index.currentValue * (1 + changePercent);
+
+                // Update DB
+                index.currentValue = parseFloat(newValue.toFixed(2));
+                await index.save();
+
+                // Update Redis Current Value
+                await redis.set(`index:price:${symbol}`, index.currentValue.toString());
+
+                // Update Redis History
+                const historyEntry = JSON.stringify({
+                    value: index.currentValue,
+                    timestamp: new Date().toISOString(),
+                });
+                await redis.lpush(`index:history:${symbol}`, historyEntry);
+                await redis.ltrim(`index:history:${symbol}`, 0, MAX_HISTORY_LENGTH - 1);
+
+                // Broadcast update to subscribers of this symbol
+                socketService.broadcastToSymbol(symbol, {
+                    symbol: index.symbol,
+                    value: index.currentValue,
+                    changePercent: changePercent * 100,
+                    timestamp: new Date().toISOString(),
+                });
+            }
+        } catch (error) {
+            logger.error('❌ Error in index simulation:', error);
         }
     }
 }

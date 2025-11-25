@@ -69,3 +69,48 @@ export const getMostBoughtStocks = async (
         sendError(res, (error as Error).message, 500);
     }
 };
+
+/**
+ * Get top gaining stocks
+ */
+export const getTopGainers = async (
+    _req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const gainers = await stocksService.getTopGainers(10);
+        sendSuccess(res, gainers);
+    } catch (error) {
+        sendError(res, (error as Error).message, 500);
+    }
+};
+
+/**
+ * Get top losing stocks
+ */
+export const getTopLosers = async (
+    _req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const losers = await stocksService.getTopLosers(10);
+        sendSuccess(res, losers);
+    } catch (error) {
+        sendError(res, (error as Error).message, 500);
+    }
+};
+
+/**
+ * Get volume shockers
+ */
+export const getVolumeShockers = async (
+    _req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const shockers = await stocksService.getVolumeShockers(10);
+        sendSuccess(res, shockers);
+    } catch (error) {
+        sendError(res, (error as Error).message, 500);
+    }
+};

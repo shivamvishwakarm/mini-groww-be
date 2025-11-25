@@ -190,3 +190,150 @@ export const getMostBoughtStocks = async (
 
     return results;
 };
+
+export interface MarketMoverStock {
+    symbol: string;
+    name: string;
+    currentPrice: number;
+    previousClose: number;
+    change: number;
+    changePercent: number;
+}
+
+/**
+ * Get top gaining stocks
+ */
+export const getTopGainers = async (
+    limit: number = 10
+): Promise<MarketMoverStock[]> => {
+    // Try to get from cache
+    const cacheKey = 'stocks:top-gainers';
+    const cached = await getCache<MarketMoverStock[]>(cacheKey);
+    if (cached) {
+        return cached;
+    }
+
+    // Get all stocks
+    const stocks = await Stock.find();
+
+    // Calculate changes and filter gainers
+    const gainers = stocks
+        .map((stock) => {
+            const change = stock.currentPrice - stock.previousClose;
+            const changePercent = (change / stock.previousClose) * 100;
+            return {
+                symbol: stock.symbol,
+                name: stock.name,
+                currentPrice: stock.currentPrice,
+                previousClose: stock.previousClose,
+                change: parseFloat(change.toFixed(2)),
+                changePercent: parseFloat(changePercent.toFixed(2)),
+            };
+        })
+        .filter((stock) => stock.changePercent > 0)
+        .sort((a, b) => b.changePercent - a.changePercent)
+        .slice(0, limit);
+
+    // Cache the result
+    await setCache(cacheKey, gainers, CACHE_TTL.STOCKS_LIST);
+
+    return gainers;
+};
+
+/**
+ * Get top losing stocks
+ */
+export const getTopLosers = async (
+    limit: number = 10
+): Promise<MarketMoverStock[]> => {
+    // Try to get from cache
+    const cacheKey = 'stocks:top-losers';
+    const cached = await getCache<MarketMoverStock[]>(cacheKey);
+    if (cached) {
+        return cached;
+    }
+
+    // Get all stocks
+    const stocks = await Stock.find();
+
+    // Calculate changes and filter losers
+    const losers = stocks
+        .map((stock) => {
+            const change = stock.currentPrice - stock.previousClose;
+            const changePercent = (change / stock.previousClose) * 100;
+            return {
+                symbol: stock.symbol,
+                name: stock.name,
+                currentPrice: stock.currentPrice,
+                previousClose: stock.previousClose,
+                change: parseFloat(change.toFixed(2)),
+                changePercent: parseFloat(changePercent.toFixed(2)),
+            };
+        })
+        .filter((stock) => stock.changePercent < 0)
+        .sort((a, b) => a.changePercent - b.changePercent)
+        .slice(0, limit);
+
+    // Cache the result
+    await setCache(cacheKey, losers, CACHE_TTL.STOCKS_LIST);
+
+    return losers;
+};
+
+export interface VolumeShockerStock {
+    symbol: string;
+    name: string;
+    currentPrice: number;
+    totalVolume: number;
+    orderCount: number;
+}
+
+/**
+ * Get volume shockers (stocks with highest trading volume)
+ */
+export const getVolumeShockers = async (
+    limit: number = 10
+): Promise<VolumeShockerStock[]> => {
+    // Try to get from cache
+    const cacheKey = 'stocks:volume-shockers';
+    const cached = await getCache<VolumeShockerStock[]>(cacheKey);
+    if (cached) {
+        return cached;
+    }
+
+    // Import Order model dynamically
+    const { Order } = await import('../models/Order.model');
+
+    // Aggregate all orders (BUY and SELL)
+    const aggregation = await Order.aggregate([
+        {
+            $group: {
+                _id: '$symbol',
+                totalVolume: { $sum: '$quantity' },
+                orderCount: { $sum: 1 },
+            },
+        },
+        { $sort: { totalVolume: -1 } },
+        { $limit: limit },
+    ]);
+
+    // Enrich with stock details
+    const results: VolumeShockerStock[] = [];
+    for (const item of aggregation) {
+        const stock = await Stock.findOne({ symbol: item._id });
+        if (stock) {
+            results.push({
+                symbol: stock.symbol,
+                name: stock.name,
+                currentPrice: stock.currentPrice,
+                totalVolume: item.totalVolume,
+                orderCount: item.orderCount,
+            });
+        }
+    }
+
+    // Cache the result
+    await setCache(cacheKey, results, CACHE_TTL.STOCKS_LIST);
+
+    return results;
+};

@@ -1,5 +1,6 @@
 import { connectDB } from '../config/db';
 import { Stock } from '../models/Stock.model';
+import { Index } from '../models/Index.model';
 import { logger } from '../utils/logger';
 
 // Sample stock data
@@ -48,23 +49,62 @@ const stocksData = [
 
 ];
 
+// Indian market indices data
+const indicesData = [
+    {
+        symbol: 'NIFTY',
+        name: 'NIFTY 50',
+        currentValue: 22150.50,
+        previousClose: 22100.00,
+    },
+    {
+        symbol: 'SENSEX',
+        name: 'BSE SENSEX',
+        currentValue: 72850.75,
+        previousClose: 72700.00,
+    },
+    {
+        symbol: 'BANKNIFTY',
+        name: 'NIFTY BANK',
+        currentValue: 48250.30,
+        previousClose: 48100.00,
+    },
+    {
+        symbol: 'MIDCAPNIFTY',
+        name: 'NIFTY MIDCAP 50',
+        currentValue: 12450.80,
+        previousClose: 12400.00,
+    },
+    {
+        symbol: 'FINNIFTY',
+        name: 'NIFTY FINANCIAL SERVICES',
+        currentValue: 20350.60,
+        previousClose: 20300.00,
+    },
+];
+
 /**
- * Seed database with stock data
+ * Seed database with stock and index data
  */
-const seedStocks = async () => {
+const seedDatabase = async () => {
     try {
         logger.info('🌱 Starting database seed...');
 
         // Connect to database
         await connectDB();
 
-        // Clear existing stocks
+        // Clear existing data
         await Stock.deleteMany({});
-        logger.info('✅ Cleared existing stocks');
+        await Index.deleteMany({});
+        logger.info('✅ Cleared existing data');
 
-        // Insert new stocks
+        // Insert stocks
         await Stock.insertMany(stocksData);
         logger.info(`✅ Inserted ${stocksData.length} stocks`);
+
+        // Insert indices
+        await Index.insertMany(indicesData);
+        logger.info(`✅ Inserted ${indicesData.length} indices`);
 
         logger.info('🎉 Database seeding completed successfully!');
         process.exit(0);
@@ -75,4 +115,4 @@ const seedStocks = async () => {
 };
 
 // Run seed
-seedStocks();
+seedDatabase();

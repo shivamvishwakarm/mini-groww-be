@@ -18,6 +18,8 @@ tags:
     description: Authentication endpoints
   - name: Stocks
     description: Stock data endpoints (with Redis caching)
+  - name: Indices
+    description: Indian market indices endpoints (NIFTY, SENSEX, etc.)
   - name: Orders
     description: Trading order endpoints
   - name: Portfolio
@@ -400,6 +402,161 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /stocks/gainers:
+    get:
+      tags:
+        - Stocks
+      summary: Get top gaining stocks
+      description: Retrieve stocks with highest percentage gains (cached for 60 seconds)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of top gaining stocks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        symbol:
+                          type: string
+                          example: "AAPL"
+                        name:
+                          type: string
+                          example: "Apple Inc."
+                        currentPrice:
+                          type: number
+                          format: double
+                          example: 155.50
+                        previousClose:
+                          type: number
+                          format: double
+                          example: 150.00
+                        change:
+                          type: number
+                          format: double
+                          example: 5.50
+                        changePercent:
+                          type: number
+                          format: double
+                          example: 3.67
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /stocks/losers:
+    get:
+      tags:
+        - Stocks
+      summary: Get top losing stocks
+      description: Retrieve stocks with highest percentage losses (cached for 60 seconds)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of top losing stocks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        symbol:
+                          type: string
+                          example: "TSLA"
+                        name:
+                          type: string
+                          example: "Tesla Inc."
+                        currentPrice:
+                          type: number
+                          format: double
+                          example: 240.00
+                        previousClose:
+                          type: number
+                          format: double
+                          example: 250.00
+                        change:
+                          type: number
+                          format: double
+                          example: -10.00
+                        changePercent:
+                          type: number
+                          format: double
+                          example: -4.00
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /stocks/volume-shockers:
+    get:
+      tags:
+        - Stocks
+      summary: Get volume shockers
+      description: Retrieve stocks with highest trading volume (cached for 60 seconds)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of stocks with highest volume
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        symbol:
+                          type: string
+                          example: "AAPL"
+                        name:
+                          type: string
+                          example: "Apple Inc."
+                        currentPrice:
+                          type: number
+                          format: double
+                          example: 150.25
+                        totalVolume:
+                          type: integer
+                          example: 5000
+                          description: Total quantity traded
+                        orderCount:
+                          type: integer
+                          example: 150
+                          description: Number of orders
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /stocks:
     get:
       tags:
@@ -505,6 +662,124 @@ paths:
                       $ref: '#/components/schemas/PricePoint'
         '404':
           description: Stock not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /indices:
+    get:
+      tags:
+        - Indices
+      summary: Get all indices
+      description: Retrieve list of all Indian market indices (cached for 60 seconds)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of indices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        symbol:
+                          type: string
+                          example: "NIFTY"
+                        name:
+                          type: string
+                          example: "NIFTY 50"
+                        currentValue:
+                          type: number
+                          format: double
+                          example: 22150.50
+                        previousClose:
+                          type: number
+                          format: double
+                          example: 22100.00
+                        change:
+                          type: number
+                          format: double
+                          example: 50.50
+                        changePercent:
+                          type: number
+                          format: double
+                          example: 0.23
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /indices/{symbol}:
+    get:
+      tags:
+        - Indices
+      summary: Get index by symbol
+      description: Retrieve detailed information for a specific index (cached for 60 seconds)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          description: Index symbol (e.g., NIFTY, SENSEX, BANKNIFTY)
+          schema:
+            type: string
+            example: "NIFTY"
+      responses:
+        '200':
+          description: Index details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      symbol:
+                        type: string
+                        example: "NIFTY"
+                      name:
+                        type: string
+                        example: "NIFTY 50"
+                      currentValue:
+                        type: number
+                        format: double
+                        example: 22150.50
+                      previousClose:
+                        type: number
+                        format: double
+                        example: 22100.00
+                      change:
+                        type: number
+                        format: double
+                        example: 50.50
+                      changePercent:
+                        type: number
+                        format: double
+                        example: 0.23
+        '404':
+          description: Index not found
           content:
             application/json:
               schema:

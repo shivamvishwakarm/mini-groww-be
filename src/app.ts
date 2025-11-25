@@ -15,6 +15,7 @@ import authRoutes from './routes/auth.routes';
 import stocksRoutes from './routes/stocks.routes';
 import ordersRoutes from './routes/orders.routes';
 import portfolioRoutes from './routes/portfolio.routes';
+import indicesRoutes from './routes/indices.routes';
 
 // Create Express app
 const app: Application = express();
@@ -54,6 +55,7 @@ app.get('/health', (_req, res) => {
 // API routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/stocks', stocksRoutes);
+app.use('/api/v1/indices', indicesRoutes);
 app.use('/api/v1/orders', ordersRoutes);
 app.use('/api/v1/portfolio', portfolioRoutes);
 
