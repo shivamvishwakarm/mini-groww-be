@@ -54,6 +54,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this}
       JWT_EXPIRES_IN: 7d
       INITIAL_BALANCE: 100000
+      SEED_DATA: "true"  # Set to "true" to seed data on startup
     depends_on:
       mongodb:
         condition: service_healthy

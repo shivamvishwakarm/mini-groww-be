@@ -20,8 +20,6 @@ export const authenticate = (
     next: NextFunction
 ): void => {
     try {
-        // Get token from Authorization header
-        // Get token from Authorization header or cookie
         let token = req.cookies.token;
 
         const authHeader = req.headers.authorization;
