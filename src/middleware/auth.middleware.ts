@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, JwtPayload } from '../utils/jwt';
 import { sendError } from '../utils/response';
+import { logger } from '../utils/logger';
 
 // Extend Express Request type to include user
 declare global {
@@ -22,17 +23,18 @@ export const authenticate = (
     try {
         let token = req.cookies.token;
 
-        const authHeader = req.headers.authorization;
+        // const authHeader = req.headers.authorization;
 
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            token = authHeader.substring(7);
-        }
+        // if (authHeader && authHeader.startsWith('Bearer ')) {
+        //     token = authHeader.substring(7);
+        // }
+
 
         if (!token) {
             sendError(res, 'No token provided', 401);
             return;
         }
-
+        logger.info("token", { token })
         // Verify token
         const payload = verifyToken(token);
 
