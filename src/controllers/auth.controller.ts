@@ -16,7 +16,7 @@ export const register = async (
         res.cookie('token', result.token, {
             httpOnly: true,
             secure: config.nodeEnv === 'production',
-            sameSite: 'strict',
+            sameSite: 'none',
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
@@ -36,7 +36,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         res.cookie('token', result.token, {
             httpOnly: true,
             secure: config.nodeEnv === 'production',
-            sameSite: 'strict',
+            sameSite: 'none',
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 

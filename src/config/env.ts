@@ -15,7 +15,7 @@ const envSchema = z.object({
     JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
     JWT_EXPIRES_IN: z.string().default('7d'),
     INITIAL_BALANCE: z.string().default('100000'),
-    CORS_ORIGIN: z.string().default('http://localhost:5173,http://localhost:4173,http://groww.shivam09.tech'),
+    CORS_ORIGIN: z.string().default('http://localhost:5173,http://localhost:4173,https://groww.shivam09.tech,https://mini-groww-fe.vercel.app,https://mini-groww-fe-git-main-shivamvishwakarms-projects.vercel.app'),
 });
 
 // Validate and parse environment variables
