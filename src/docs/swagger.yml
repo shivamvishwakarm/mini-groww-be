@@ -907,6 +907,142 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /watchlist:
+    get:
+      tags:
+        - Watchlist
+      summary: Get user's watchlist
+      description: Retrieve the list of stocks in the user's watchlist
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Watchlist returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      symbols:
+                        type: array
+                        items:
+                          type: string
+                          example: "AAPL"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /watchlist/add:
+    post:
+      tags:
+        - Watchlist
+      summary: Add stock to watchlist
+      description: Add a stock symbol to the user's watchlist
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - symbol
+              properties:
+                symbol:
+                  type: string
+                  example: "AAPL"
+      responses:
+        '200':
+          description: Stock added to watchlist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      symbols:
+                        type: array
+                        items:
+                          type: string
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /watchlist/remove:
+    post:
+      tags:
+        - Watchlist
+      summary: Remove stock from watchlist
+      description: Remove a stock symbol from the user's watchlist
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - symbol
+              properties:
+                symbol:
+                  type: string
+                  example: "AAPL"
+      responses:
+        '200':
+          description: Stock removed from watchlist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      symbols:
+                        type: array
+                        items:
+                          type: string
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /socket.io/:
     get:
       tags:

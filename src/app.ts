@@ -16,6 +16,7 @@ import stocksRoutes from './routes/stocks.routes';
 import ordersRoutes from './routes/orders.routes';
 import portfolioRoutes from './routes/portfolio.routes';
 import indicesRoutes from './routes/indices.routes';
+import watchlistRoutes from './routes/watchlist.routes';
 
 // Create Express app
 const app: Application = express();
@@ -59,6 +60,7 @@ app.use('/api/v1/stocks', stocksRoutes);
 app.use('/api/v1/indices', indicesRoutes);
 app.use('/api/v1/orders', ordersRoutes);
 app.use('/api/v1/portfolio', portfolioRoutes);
+app.use('/api/v1/watchlist', watchlistRoutes);
 
 // Swagger documentation
 try {
